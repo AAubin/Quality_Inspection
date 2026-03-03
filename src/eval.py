@@ -1,9 +1,11 @@
 import json
+from pathlib import Path
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from cnn import CNN
+from simple_train import create_train_val_dataloaders
 from sklearn.metrics import confusion_matrix, accuracy_score, precision_recall_fscore_support
 
 def metrics_evaluation(model, data_loader, criterion, device, seuil=0.5):
@@ -50,19 +52,29 @@ def metrics_evaluation(model, data_loader, criterion, device, seuil=0.5):
         "f1_score_class_1":f1_score[1]
     }
     cm = confusion_matrix(true_vals, predictions)
-    return metrics, cm
+    return {"metrics": metrics, "confusion_matrix": cm}
 
-def create_dataloader(data_dir, set, batch_size):
+def create_test_dataloader(data_dir, batch_size):
     transform = transforms.Compose([transforms.Grayscale(num_output_channels=1), transforms.Resize((300, 300)), transforms.ToTensor()])
-    dataset_test = datasets.ImageFolder(root=data_dir+set, transform=transform)
+    dataset_test = datasets.ImageFolder(root=data_dir+'test', transform=transform)
 
     dataloader_test = DataLoader(dataset_test, batch_size=batch_size, shuffle=True)
     return dataloader_test
+
+def save_metrics(metrics, dataset, timestamp, res_dir):
+    metrics_dir = res_dir + f"res_{timestamp}/"
+    # Créer le répertoire s'il n'existe pas
+    Path(metrics_dir).mkdir(parents=True, exist_ok=True)
+    metrics_path = metrics_dir + f"metrics_{dataset}.json"
+    print(f"Saving {dataset} metrics to {metrics_path}")
+    with open(metrics_path, 'w') as f:
+        json.dump(metrics, f, indent=4)
 
 if __name__=='__main__':
     BATCH_SIZE = 32
     TIMESTAMP = "20260227_1909"
     DATA_DIR = "./data/casting_data/"
+    RESULTS_DIR = "./results/evaluation_results/"
 
     model_path = f"./results/trained_models/trainedCNN_{TIMESTAMP}.pth"
     model_params_path = f"./results/trained_models/model_params_{TIMESTAMP}.json"
@@ -79,19 +91,28 @@ if __name__=='__main__':
     model.load_state_dict(saved_weights)
 
     # Create datasets
-    dataloader_train = create_dataloader(DATA_DIR, 'train', BATCH_SIZE)
-    dataloader_test = create_dataloader(DATA_DIR, 'test', BATCH_SIZE)
+    dataloader_train, dataloader_val = create_train_val_dataloaders(DATA_DIR, BATCH_SIZE)
+    dataloader_test = create_test_dataloader(DATA_DIR, BATCH_SIZE)
 
     loss_fn = torch.nn.BCELoss()
 
-    print('\nEvaluate model on test set')
-    train_metrics, cm_train = metrics_evaluation(model, dataloader_train, loss_fn, device, seuil=0.5)
-    print(f"Train metrics: {train_metrics}")
-    print(f"Confusion Matrix:\n{cm_train}")
+    print('\nEvaluate model on train set')
+    train_res = metrics_evaluation(model, dataloader_train, loss_fn, device, seuil=0.5)
+    print(f"Train metrics: {train_res['metrics']}")
+    print(f"Confusion Matrix:\n{train_res['confusion_matrix']}")
+    save_metrics(train_res['metrics'], "train", TIMESTAMP, RESULTS_DIR)
+    print('---'*30)
+
+    print('\nEvaluate model on val set')
+    val_res = metrics_evaluation(model, dataloader_val, loss_fn, device, seuil=0.5)
+    print(f"Val metrics: {val_res['metrics']}")
+    print(f"Confusion Matrix:\n{val_res['confusion_matrix']}")
+    save_metrics(val_res['metrics'], "val", TIMESTAMP, RESULTS_DIR)
     print('---'*30)
 
     print('\nEvaluate model on test set')
-    test_metrics, cm_test = metrics_evaluation(model, dataloader_test, loss_fn, device, seuil=0.5)
-    print(f"Test metrics: {test_metrics}")
-    print(f"Confusion Matrix:\n{cm_test}")
+    test_res = metrics_evaluation(model, dataloader_test, loss_fn, device, seuil=0.5)
+    print(f"Test metrics: {test_res['metrics']}")
+    print(f"Confusion Matrix:\n{test_res['confusion_matrix']}")
+    save_metrics(test_res['metrics'], "test", TIMESTAMP, RESULTS_DIR)
     print('---'*30)

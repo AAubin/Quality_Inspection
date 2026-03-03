@@ -63,7 +63,7 @@ def train(model, data_loader, val_data_loader, loss_fn, optimizer, device, epoch
     print(f"Best model from epoch {checkpoint['epoch']+1} with val_loss: {checkpoint['val_loss']:.4f}")
     return {'train_loss': train_loss_hist, 'val_loss': val_loss_hist}
 
-def create_dataloaders(data_dir, batch_size):
+def create_train_val_dataloaders(data_dir, batch_size):
     transform = transforms.Compose([transforms.Grayscale(num_output_channels=1), transforms.Resize((300, 300)), transforms.ToTensor()])
     dataset_full = datasets.ImageFolder(root=data_dir+'train', transform=transform)
 
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     print(f"Using device {device}")
 
     # instantiating our dataset object and create data loader for train and val
-    dataloader_train, dataloader_val = create_dataloaders(DATA_DIR, BATCH_SIZE)
+    dataloader_train, dataloader_val = create_train_val_dataloaders(DATA_DIR, BATCH_SIZE)
     
     # construct model and assign it to device
     model_params = {

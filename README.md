@@ -14,3 +14,20 @@ Both train and test folder contains def_front and ok_front subfolders.
 train: def_front have 3758 and ok_front have 2875 images
 test: def_front have 453 and ok_front have 262 images
 
+
+## Usage
+```
+pip install -r requirements.txt
+
+To see model structure (configurable)
+python ./src/cnn.py
+
+To train the model (hyperparameters configurables)
+python ./src/simple_train.py
+
+To evaluate the model (don't forget to edit timestamp)
+python ./src/eval.py
+
+To draw results graphs
+python .src/visualization.py
+```

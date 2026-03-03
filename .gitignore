@@ -1,3 +1,5 @@
-casting_data/
+data/casting_data/
 best_model.pt
-results/trained_models/
+
+results/evaluation_results/*
+results/trained_models/*
