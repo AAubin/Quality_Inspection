@@ -28,6 +28,6 @@ python ./src/simple_train.py
 To evaluate the model (don't forget to edit timestamp)
 python ./src/eval.py
 
-To draw results graphs
+To draw results graphs (don't forget to edit timestamp)
 python .src/visualization.py
 ```
